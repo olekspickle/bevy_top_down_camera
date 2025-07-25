@@ -79,6 +79,10 @@ fn spawn_world(
             (Node::default(), Text("Z - camera down".to_string())),
             (
                 Node::default(),
+                Text("F - toggle follow player mode".to_string())
+            ),
+            (
+                Node::default(),
                 Text("Right mouse - hold to rotate camera horizontally".to_string()),
             ),
         ],

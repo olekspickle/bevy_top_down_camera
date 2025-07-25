@@ -4,6 +4,9 @@ mod mouse;
 
 use mouse::MousePlugin;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CameraSyncSet;
+
 /// # Examples
 ///
 /// ```
@@ -12,9 +15,6 @@ use mouse::MousePlugin;
 /// App::new().add_plugins(TopDownCameraPlugin);
 /// ```
 pub struct TopDownCameraPlugin;
-
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CameraSyncSet;
 
 impl Plugin for TopDownCameraPlugin {
     fn build(&self, app: &mut App) {

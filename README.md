@@ -3,8 +3,9 @@
 - Move around by hovering cursor to the edges of the screen
 - Zoom in/out
 - Rotate horizontally to change observable angle preserving pitch and yaw
+- Follow target
 
-![camera demo](assets/default.gif)
+![camera demo](assets/top-down.gif)
 
 ## Getting Started
 
@@ -64,11 +65,16 @@ Most settings can be overridden:
 commands.spawn((
     // These are the default settings
     TopDownCamera {
-        speed: Vec2::new(1.0, 1.0),
-        zoom_enabled: false,
-        zoom_button: MouseButton::Middle,
-        zoom: Zoom::new(1.5, 3.0),
-        zoom_speed: 1.0,
+        initial_setup: false,
+        follow: false,
+        zoom_enabled: true,
+        zoom: Zoom::new(5.0, 50.0, 10.0),
+        height: Height::new(5.0, 50.0),
+        cursor_enabled: true,
+        cursor_edge_margin: Vec2::splat(30.0),
+        rotate_speed: 0.01,
+        max_speed: 200.0,
+        mode: CameraMode::Move,
     },
     Camera3d::default(),
 ));
