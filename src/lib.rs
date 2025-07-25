@@ -67,16 +67,16 @@ pub struct TopDownCamera {
 impl Default for TopDownCamera {
     fn default() -> Self {
         TopDownCamera {
-            initial_setup: false,
             follow: false,
             zoom_enabled: true,
             zoom: Zoom::new(5.0, 50.0, 10.0),
-            height: Height::new(5.0, 50.0),
             cursor_enabled: true,
             cursor_edge_margin: Vec2::splat(30.0),
+            height: Height::new(5.0, 50.0),
             rotate_speed: 0.01,
             max_speed: 200.0,
             mode: CameraMode::Move,
+            initial_setup: false,
         }
     }
 }

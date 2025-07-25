@@ -110,7 +110,7 @@ fn actions(
         direction.x += 1.0;
     }
 
-    if keyboard_input.pressed(KeyCode::KeyF) {
+    if keyboard_input.just_pressed(KeyCode::KeyF) {
         let Ok(mut cam) = cam_q.single_mut() else {
             return;
         };

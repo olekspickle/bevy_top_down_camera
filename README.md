@@ -9,7 +9,7 @@
 
 ## Getting Started
 
-Add the **bevy_to_down_camera** crate:
+Add the **bevy_top_down_camera** crate:
 
 ```
 cargo add bevy_third_person_camera
@@ -51,7 +51,6 @@ commands.spawn((
 ## Examples
 
 - default
-- custom
 
 ```
 cargo run --example <example name>
@@ -65,16 +64,15 @@ Most settings can be overridden:
 commands.spawn((
     // These are the default settings
     TopDownCamera {
-        initial_setup: false,
-        follow: false,
+        follow: true,
         zoom_enabled: true,
         zoom: Zoom::new(5.0, 50.0, 10.0),
-        height: Height::new(5.0, 50.0),
         cursor_enabled: true,
         cursor_edge_margin: Vec2::splat(30.0),
+        height: Height::new(5.0, 50.0),
         rotate_speed: 0.01,
         max_speed: 200.0,
-        mode: CameraMode::Move,
+        ..default()
     },
     Camera3d::default(),
 ));
