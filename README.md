@@ -89,40 +89,22 @@ When using third party physics engines such as bevy rapier 3d or avian 3d, you s
 
 ## Default Controls
 
-| Action             | Mouse/Keyboard      | Gamepad      | Enabled by Default |
-| ------------------ | ------------------- | ------------ | ------------------ |
-| Zoom In            | Scroll Up           | D Pad Up     | Yes                |
-| Zoom Out           | Scroll Down         | D Pad Down   | Yes                |
-| Aim                | Right Mouse Button  | Left Trigger | No                 |
-| Toggle Offset      | E                   | D Pad Right  | No                 |
-| Cursor Lock/Unlock | Space               | n/a          | Yes                |
-| Orbit Button       | Middle Mouse Button | Left Bumper  | No                 |
+| Action             | Mouse/Keyboard        |  Enabled by Default |
+| ------------------ | -------------------   |  ------------------ |
+| Zoom In            | Scroll Up             |  Yes                |
+| Zoom Out           | Scroll Down           |  Yes                |
+| Rotate             | Right Mouse Button    |  Yes                |
+| Move around        | Hover to screen edges |  Yes                |
+| Follow             | -                     |  No                 |
 
 ## Bevy Version Compatibility
 
-| bevy | bevy_third_person_camera |
+| bevy | bevy_top_down_camera |
 | ---- | ------------------------ |
-| 0.16 | 0.2.1 - 0.3              |
-| 0.15 | 0.2.0                    |
-| 0.14 | 0.1.11 - 0.1.14          |
-| 0.13 | 0.1.9 - 0.1.10           |
-| 0.12 | 0.1.7 - 0.1.8            |
-| 0.11 | 0.1.1 - 0.1.6            |
-
-Refer to the [Changelog](Changelog.md) to view breaking changes and updates.
-
-## Migration Guides
-
-- [v0.1.14 -> v0.2.0](migrationGuides/v0.1.14-v0.2.0.md)
-- [v0.1.10 -> v0.1.11](migrationGuides/v0.1.10-v0.1.11.md)
-- [v0.1.9 -> v0.1.10](migrationGuides/v0.1.9-v0.1.10.md)
+| 0.16 | 0.1.0 - 0.1.1              |
 
 ## License
 
 - MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT)
 - Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
-
-
-
-
 
