@@ -101,7 +101,7 @@ When using third party physics engines such as bevy rapier 3d or avian 3d, you s
 
 | bevy | bevy_top_down_camera |
 | ---- | ------------------------ |
-| 0.16 | 0.1.0 - 0.1.1              |
+| 0.16 | 0.1.0 - 0.1.3              |
 
 ## License
 

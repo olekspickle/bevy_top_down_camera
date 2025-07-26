@@ -40,10 +40,10 @@ pub fn move_on_edges(
     }
 
     let mut movement = Vec3::ZERO;
-    let mut min_edge_ratio: f32 = 1.0; // Track how close to the edge we are for speed interpolation
 
     match cam.mode {
         CameraMode::Move => {
+            let mut edge_rel_speed: f32 = 1.0; // Track how close to the edge we are for speed interpolation
             // Horizontal
             {
                 let mut dir = *pos.left();
@@ -53,13 +53,13 @@ pub fn move_on_edges(
                 if cursor_pos.x <= cam.cursor_edge_margin.x {
                     // left edge → move camera left
                     let ratio = cursor_pos.x / cam.cursor_edge_margin.x;
-                    min_edge_ratio = min_edge_ratio.min(ratio);
+                    edge_rel_speed = edge_rel_speed.min(ratio);
                     movement += dir;
                 } else if cursor_pos.x >= window.width() - cam.cursor_edge_margin.x {
                     // right edge → move right
                     let right_offset = window.width() - cursor_pos.x;
                     let ratio = right_offset / cam.cursor_edge_margin.x;
-                    min_edge_ratio = min_edge_ratio.min(ratio);
+                    edge_rel_speed = edge_rel_speed.min(ratio);
                     movement -= dir;
                 }
             }
@@ -72,20 +72,20 @@ pub fn move_on_edges(
 
                 if cursor_pos.y <= cam.cursor_edge_margin.y {
                     let ratio = cursor_pos.y / cam.cursor_edge_margin.y;
-                    min_edge_ratio = min_edge_ratio.min(ratio);
+                    edge_rel_speed = edge_rel_speed.min(ratio);
                     movement += dir;
                 } else if cursor_pos.y >= window.height() - cam.cursor_edge_margin.y {
                     let bottom_offset = window.height() - cursor_pos.y;
                     let ratio = bottom_offset / cam.cursor_edge_margin.y;
-                    min_edge_ratio = min_edge_ratio.min(ratio);
+                    edge_rel_speed = edge_rel_speed.min(ratio);
                     movement -= dir;
                 }
             }
 
             // Apply movement with adjusted speed
             if movement != Vec3::ZERO {
-                let edge_speed_factor = min_edge_ratio.clamp(0.1, 1.0);
-                let speed = cam.max_speed * edge_speed_factor;
+                let edge_rel_speed = edge_rel_speed.max(0.1);
+                let speed = cam.max_speed / edge_rel_speed;
                 pos.translation += movement.normalize_or_zero() * speed * time.delta_secs();
             }
         }
