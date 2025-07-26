@@ -41,6 +41,7 @@ impl Plugin for TopDownCameraPlugin {
 /// ```
 #[derive(Component)]
 pub struct TopDownCamera {
+    /// Whether camera should follow [`TopDownCameraTarget`] or not
     pub follow: bool,
     pub cursor_enabled: bool,
     /// Only relevant if cursor_enabled
@@ -55,6 +56,7 @@ pub struct TopDownCamera {
     pub zoom: Zoom,
     /// Height range of the camera
     pub height: Height,
+    /// Max speed which will be used in egde interpolation
     pub max_speed: f32,
     /// Speed of the rotate action
     pub rotate_speed: f32,
@@ -69,7 +71,7 @@ impl Default for TopDownCamera {
         TopDownCamera {
             follow: false,
             zoom_enabled: true,
-            zoom: Zoom::new(5.0, 50.0, 10.0),
+            zoom: (5.0, 50.0).into(),
             cursor_enabled: true,
             cursor_edge_margin: Vec2::splat(30.0),
             height: Height::new(5.0, 50.0),
@@ -88,8 +90,26 @@ pub struct Zoom {
 }
 
 impl Zoom {
-    pub fn new(min: f32, max: f32, speed: f32) -> Self {
-        Self { min, max, speed }
+    pub fn new(min: f32, max: f32) -> Self {
+        Self {
+            min,
+            max,
+            speed: 10.0,
+        }
+    }
+    pub fn with_speed(mut self, speed: f32) -> Self {
+        self.speed = speed;
+        self
+    }
+}
+
+impl From<(f32, f32)> for Zoom {
+    fn from((min, max): (f32, f32)) -> Self {
+        Self {
+            min,
+            max,
+            speed: 10.0,
+        }
     }
 }
 
