@@ -12,7 +12,7 @@ readme = "README.md"
 exclude = ["assets/*"]
 
 [dependencies]
-bevy = { version = "0.16", default-features = false, features = ["bevy_window"] }
+bevy = { version = "0.17.0-rc.2", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
 
 [dev-dependencies]
-bevy = "0.16"
+bevy = { version = "0.17.0-rc.2", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }

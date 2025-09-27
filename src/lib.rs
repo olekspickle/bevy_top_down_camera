@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
 mod mouse;
-
 use mouse::MousePlugin;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -21,7 +20,7 @@ impl Plugin for TopDownCameraPlugin {
         app.add_plugins(MousePlugin).add_systems(
             PostUpdate,
             sync_player_camera
-                .before(TransformSystem::TransformPropagate)
+                .before(TransformSystems::Propagate)
                 .in_set(CameraSyncSet),
         );
     }
@@ -73,6 +72,81 @@ pub struct TopDownCamera {
     pub mode: CameraMode,
     #[doc(hidden)]
     pub initial_setup: bool,
+}
+
+impl TopDownCamera {
+    pub fn with_follow(mut self) -> Self {
+        self.follow = true;
+        self
+    }
+    pub fn with_cursor(mut self) -> Self {
+        self.cursor_enabled = true;
+        self
+    }
+    pub fn with_zoom(mut self) -> Self {
+        self.zoom_enabled = true;
+        self
+    }
+    pub fn with_height(mut self) -> Self {
+        self.height_keys_enabled = true;
+        self
+    }
+
+    pub fn with_cursor_move_speed(mut self, speed: f32) -> Self {
+        self.cursor_move_speed = speed;
+        self
+    }
+
+    pub fn with_cursor_edge_margin(mut self, margin: Vec2) -> Self {
+        self.cursor_edge_margin = margin;
+        self
+    }
+
+    pub fn with_cursor_rotate_speed(mut self, speed: f32) -> Self {
+        self.cursor_rotate_speed = speed;
+        self
+    }
+
+    pub fn with_cursor_max_speed(mut self, speed: f32) -> Self {
+        self.cursor_max_speed = speed;
+        self
+    }
+    pub fn with_zoom_speed(mut self, speed: f32) -> Self {
+        self.zoom.speed = speed;
+        self
+    }
+    pub fn with_zoom_min(mut self, min: f32) -> Self {
+        self.zoom.min = min;
+        self
+    }
+    pub fn with_zoom_max(mut self, max: f32) -> Self {
+        self.zoom.max = max;
+        self
+    }
+    pub fn with_height_min(mut self, min: f32) -> Self {
+        self.height.min = min;
+        self
+    }
+    pub fn with_height_max(mut self, max: f32) -> Self {
+        self.height.max = max;
+        self
+    }
+    pub fn with_height_rise_key(mut self, key: KeyCode) -> Self {
+        self.height_rise_key = key.into();
+        self
+    }
+    pub fn with_height_lower_key(mut self, key: KeyCode) -> Self {
+        self.height_lower_key = key.into();
+        self
+    }
+    pub fn with_rotate_key(mut self, key: KeyCode) -> Self {
+        self.rotate_key = key.into();
+        self
+    }
+    pub fn with_height_keys_enabled(mut self) -> Self {
+        self.height_keys_enabled = true;
+        self
+    }
 }
 
 impl Default for TopDownCamera {

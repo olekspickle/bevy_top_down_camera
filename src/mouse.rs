@@ -19,7 +19,7 @@ impl Plugin for MousePlugin {
 pub fn move_on_edges(
     time: Res<Time>,
     window_q: Query<&Window, With<PrimaryWindow>>,
-    mut mouse_evr: EventReader<MouseMotion>,
+    mut mouse_evr: MessageReader<MouseMotion>,
     mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
@@ -103,7 +103,7 @@ pub fn move_on_edges(
 }
 
 fn zoom(
-    mut scroll_evr: EventReader<MouseWheel>,
+    mut scroll_evr: MessageReader<MouseWheel>,
     mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
