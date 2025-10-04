@@ -3,7 +3,7 @@ use bevy_top_down_camera::*;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TopDownCameraPlugin /* ADD THIS */))
+        .add_plugins((DefaultPlugins, TopDownCameraPlugin))
         .add_systems(Startup, (spawn_player, spawn_world, spawn_camera))
         .add_systems(Update, actions)
         .run();
@@ -17,45 +17,39 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = Mesh::from(Capsule3d::new(0.5, 1.0));
-    let mesh = Mesh3d(meshes.add(mesh.clone()));
-    let color: MeshMaterial3d<StandardMaterial> =
-        MeshMaterial3d(materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5)));
-
-    let player = (
-        mesh,
-        color,
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Capsule3d::new(0.5, 1.0)),
+            material: materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5)),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            ..default()
+        },
         Player,
         TopDownCameraTarget, // ADD THIS
-        Transform::from_xyz(0.0, 0.5, 0.0),
-    );
-
-    commands.spawn(player);
+    ));
 }
 
 fn spawn_camera(mut commands: Commands) {
-    let camera = (
-        Camera3d::default(),
+    commands.spawn((
+        Camera3dBundle::default(),
         // these are default values, but you can change anything you'd want
         TopDownCamera {
-            follow: false,
-            zoom_enabled: true,
-            zoom: (5.0, 50.0).into(),
-            cursor_enabled: true,
-            cursor_move_speed: 0.2,
-            cursor_max_speed: 200.0,
-            cursor_rotate_speed: 0.01,
-            cursor_edge_margin: Vec2::splat(30.0),
-            mode: CameraMode::Move,
-            initial_setup: false,
-            height: Height::new(5.0, 50.0),
-            height_keys_enabled: true,
+            motion: Motion {
+                follow: false,
+                move_speed: 0.2,
+                max_speed: 200.0,
+                rotate_speed: 0.01,
+                edge_margin: Vec2::splat(30.0),
+                deadzone: 0.1,
+            },
+            zoom: Some((5.0, 50.0).into()),
+            height: Some(Height::new(5.0, 50.0)),
             height_rise_key: KeyCode::KeyX.into(),
             height_lower_key: KeyCode::KeyZ.into(),
             rotate_key: MouseButton::Right.into(),
+            ..default()
         }, // ADD THIS
-    );
-    commands.spawn(camera);
+    ));
 }
 
 fn spawn_world(
@@ -63,47 +57,54 @@ fn spawn_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let floor = (
-        Mesh3d(meshes.add(Mesh::from(Plane3d::default().mesh().size(50.0, 50.0)))),
-        MeshMaterial3d(materials.add(Color::srgb(0.11, 0.27, 0.16))),
-    );
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Plane3d::default().mesh().size(50.0, 50.0)),
+        material: materials.add(Color::srgb(0.11, 0.27, 0.16)),
+        ..default()
+    });
 
-    let light = (
-        PointLight {
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
             intensity: 1500.0 * 1000.0,
             ..default()
         },
-        Transform::from_xyz(0.0, 5.0, 0.0),
-    );
+        transform: Transform::from_xyz(0.0, 5.0, 0.0),
+        ..default()
+    });
 
-    commands.spawn(floor);
-    commands.spawn(light);
-
-    commands.spawn((
-        Node {
-            align_items: AlignItems::Start,
-            justify_content: JustifyContent::Center,
-            flex_direction: FlexDirection::Column,
+    commands.spawn(
+        NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Start,
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
             ..default()
-        },
-        children![
-            (
-                Node::default(),
-                Text("Move mouse to edges to move camera".to_string())
-            ),
-            (Node::default(), Text("Use mouse wheel to zoom".to_string())),
-            (Node::default(), Text("X - camera up".to_string())),
-            (Node::default(), Text("Z - camera down".to_string())),
-            (
-                Node::default(),
-                Text("F - toggle follow player mode".to_string())
-            ),
-            (
-                Node::default(),
-                Text("Right mouse - hold to rotate camera horizontally".to_string()),
-            ),
-        ],
-    ));
+        }
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Move mouse to edges to move camera",
+                TextStyle::default(),
+            ));
+            parent.spawn(TextBundle::from_section(
+                "Use mouse wheel to zoom",
+                TextStyle::default(),
+            ));
+            parent.spawn(TextBundle::from_section("X - camera up", TextStyle::default()));
+            parent.spawn(TextBundle::from_section("Z - camera down", TextStyle::default()));
+            parent.spawn(TextBundle::from_section(
+                "F - toggle follow player mode",
+                TextStyle::default(),
+            ));
+            parent.spawn(TextBundle::from_section(
+                "Right mouse - hold to rotate camera horizontally",
+                TextStyle::default(),
+            ));
+        }),
+    );
 }
 
 fn actions(
@@ -131,7 +132,7 @@ fn actions(
         let Ok(mut cam) = cam_q.single_mut() else {
             return;
         };
-        cam.follow = !cam.follow;
+        cam.motion.follow = !cam.motion.follow;
     }
 
     if direction.length_squared() > 0.0 {

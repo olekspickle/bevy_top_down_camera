@@ -12,7 +12,16 @@ readme = "README.md"
 exclude = ["assets/*"]
 
 [dependencies]
-bevy = { version = "0.17.0", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+bevy = { version = "^0.17", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+# Compile low-severity logs out of builds for performance.
+# Remove these features if you want to profile your game with tracy.
+# (see <https://github.com/bevyengine/bevy/blob/main/docs/profiling.md#tracy-profiler>)
+tracing = { version = "^0.1", features = ["max_level_debug", "release_max_level_warn"] }
 
 [dev-dependencies]
-bevy = { version = "0.17.0", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+bevy = { version = "^0.17", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+
+# LINT
+[lints.clippy]
+collapsible_if = "allow"           # Queries may access many components, which would undesirably trigger this lint.
+

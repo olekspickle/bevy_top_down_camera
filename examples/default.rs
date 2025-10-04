@@ -114,7 +114,7 @@ fn actions(
         let Ok(mut cam) = cam_q.single_mut() else {
             return;
         };
-        cam.follow = !cam.follow;
+        cam.motion.follow = !cam.motion.follow;
     }
 
     if direction.length_squared() > 0.0 {

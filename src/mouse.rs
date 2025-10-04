@@ -54,15 +54,15 @@ pub fn move_on_edges(
                 dir.y = 0.0;
                 let dir = dir.normalize_or_zero();
 
-                if cursor_pos.x <= cam.cursor_edge_margin.x {
+                if cursor_pos.x <= cam.motion.edge_margin.x {
                     // left edge → move camera left
-                    let ratio = cursor_pos.x / cam.cursor_edge_margin.x;
+                    let ratio = cursor_pos.x / cam.motion.edge_margin.x;
                     edge_rel_speed = edge_rel_speed.min(ratio);
                     movement += dir;
-                } else if cursor_pos.x >= window.width() - cam.cursor_edge_margin.x {
+                } else if cursor_pos.x >= window.width() - cam.motion.edge_margin.x {
                     // right edge → move right
                     let right_offset = window.width() - cursor_pos.x;
-                    let ratio = right_offset / cam.cursor_edge_margin.x;
+                    let ratio = right_offset / cam.motion.edge_margin.x;
                     edge_rel_speed = edge_rel_speed.min(ratio);
                     movement -= dir;
                 }
@@ -74,13 +74,13 @@ pub fn move_on_edges(
                 dir.y = 0.0;
                 let dir = dir.normalize_or_zero();
 
-                if cursor_pos.y <= cam.cursor_edge_margin.y {
-                    let ratio = cursor_pos.y / cam.cursor_edge_margin.y;
+                if cursor_pos.y <= cam.motion.edge_margin.y {
+                    let ratio = cursor_pos.y / cam.motion.edge_margin.y;
                     edge_rel_speed = edge_rel_speed.min(ratio);
                     movement += dir;
-                } else if cursor_pos.y >= window.height() - cam.cursor_edge_margin.y {
+                } else if cursor_pos.y >= window.height() - cam.motion.edge_margin.y {
                     let bottom_offset = window.height() - cursor_pos.y;
-                    let ratio = bottom_offset / cam.cursor_edge_margin.y;
+                    let ratio = bottom_offset / cam.motion.edge_margin.y;
                     edge_rel_speed = edge_rel_speed.min(ratio);
                     movement -= dir;
                 }
@@ -89,14 +89,14 @@ pub fn move_on_edges(
             // Apply movement with adjusted speed
             if movement != Vec3::ZERO {
                 let edge_rel_speed = edge_rel_speed.max(0.1);
-                let speed = cam.cursor_max_speed / edge_rel_speed;
+                let speed = cam.motion.max_speed / edge_rel_speed;
                 let delta = movement.normalize_or_zero() * speed * time.delta_secs();
                 let target = pos.translation + delta;
-                pos.translation = pos.translation.lerp(target, cam.cursor_move_speed);
+                pos.translation = pos.translation.lerp(target, cam.motion.move_speed);
             }
         }
         CameraMode::Rotate => {
-            let yaw_rot = Quat::from_rotation_y(-value.x * cam.cursor_rotate_speed);
+            let yaw_rot = Quat::from_rotation_y(-value.x * cam.motion.rotate_speed);
             pos.rotate(yaw_rot);
         }
     }
@@ -109,23 +109,24 @@ fn zoom(
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
+    if let (Some(height), Some(zoom)) = (cam.height.as_ref(), cam.zoom.as_ref()) {
+        let mut scroll = 0.0;
+        for ev in scroll_evr.read() {
+            scroll += ev.y;
+        }
 
-    let mut scroll = 0.0;
-    for ev in scroll_evr.read() {
-        scroll += ev.y;
-    }
+        if scroll == 0.0 {
+            return;
+        }
 
-    if scroll == 0.0 {
-        return;
+        let direction = pos.forward().normalize();
+        let delta = direction * scroll;
+        let target = pos.translation + delta;
+        if target.y < height.min || target.y > height.max {
+            return;
+        }
+        pos.translation = pos.translation.lerp(target, zoom.speed);
     }
-
-    let direction = pos.forward().normalize();
-    let delta = direction * scroll;
-    let target = pos.translation + delta;
-    if target.y < cam.height.min || target.y > cam.height.max {
-        return;
-    }
-    pos.translation = pos.translation.lerp(target, cam.zoom.speed);
 }
 
 fn change_height(
@@ -135,21 +136,27 @@ fn change_height(
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
+    if let Some(height) = cam.height.as_ref() {
+        let mut delta = 0.0;
 
-    let mut delta = 0.0;
+        if keys.pressed(cam.height_rise_key.key()) {
+            delta += 1.0;
+        }
+        if keys.pressed(cam.height_lower_key.key()) {
+            delta -= 1.0;
+        }
 
-    if keys.pressed(cam.height_rise_key.key()) {
-        delta += 1.0;
+        let target = pos.translation.y + delta;
+        if target < height.min || target > height.max {
+            return;
+        }
+        let speed = if let Some(zoom) = cam.zoom.as_ref() {
+            zoom.speed
+        } else {
+            0.1
+        };
+        pos.translation.y = pos.translation.y.lerp(target, speed);
     }
-    if keys.pressed(cam.height_lower_key.key()) {
-        delta -= 1.0;
-    }
-
-    let target = pos.translation.y + delta;
-    if target < cam.height.min || target > cam.height.max {
-        return;
-    }
-    pos.translation.y = pos.translation.y.lerp(target, cam.zoom.speed);
 }
 
 fn mode_switch(
@@ -176,6 +183,7 @@ fn mode_switch(
                 cam.mode = CameraMode::Move;
             }
         }
+        _ => {}
     }
 }
 
@@ -183,5 +191,5 @@ pub fn zoom_condition(cam_q: Query<&TopDownCamera>) -> bool {
     let Ok(cam) = cam_q.single() else {
         return false;
     };
-    cam.zoom_enabled
+    cam.zoom.is_some()
 }
