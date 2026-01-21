@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install alsa, udev and wayland
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev
+      - name: Install wayland
+        run: sudo apt-get update; sudo apt-get install libwayland-dev
         if: runner.os == 'linux'
       - run: cargo build
 
@@ -26,8 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install alsa, udev and wayland
-        run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev
+      - name: Install wayland
+        run: sudo apt-get update; sudo apt-get install libwayland-dev
         if: runner.os == 'linux'
       - run: cargo build --examples
 
@@ -46,5 +46,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install wayland
+        run: sudo apt-get update; sudo apt-get install libwayland-dev
+        if: runner.os == 'linux'
       - run: rustup component add clippy
       - run: cargo clippy -- -D warnings
