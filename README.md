@@ -6,6 +6,7 @@
 - Follow target
 
 ![camera demo](assets/top-down.gif)
+![smooth follow](assets/smoothed-follow.gif)
 
 ## Getting Started
 
@@ -48,14 +49,6 @@ commands.spawn((
 ));
 ```
 
-## Examples
-
-- default
-
-```
-cargo run --example <example name>
-```
-
 ## Custom Settings
 
 Most settings can be overridden:
@@ -64,21 +57,20 @@ Most settings can be overridden:
 commands.spawn((
     // These are the default settings
     TopDownCamera {
-        follow: false,
-        zoom_enabled: true,
-        zoom: (5.0, 50.0).into(),
-        cursor_enabled: true,
-        cursor_move_speed: 0.2,
-        cursor_max_speed: 200.0,
-        cursor_rotate_speed: 0.01,
-        cursor_edge_margin: Vec2::splat(30.0),
-        mode: CameraMode::Move,
-        initial_setup: false,
-        height: Height::new(5.0, 50.0),
-        height_keys_enabled: true,
-        height_rise_key: KeyCode::KeyX.into(),
-        height_lower_key: KeyCode::KeyZ.into(),
-        rotate_key: MouseButton::Right.into(),
+            motion: Motion {
+                follow: true,
+                move_speed: 0.05,
+                max_speed: 200.0,
+                rotate_speed: 0.01,
+                edge_margin: Vec2::splat(30.0),
+                ..default()
+            },
+            zoom: Some((5.0, 50.0).into()),
+            height: Some((5.0, 50.0).into()),
+            height_rise_key: KeyCode::KeyX.into(),
+            height_lower_key: KeyCode::KeyZ.into(),
+            rotate_key: MouseButton::Right.into(),
+            ..default()
     },
     Camera3d::default(),
 ));
@@ -107,6 +99,7 @@ When using third party physics engines such as bevy rapier 3d or avian 3d, you s
 
 | bevy | bevy_top_down_camera |
 | ---- | -------------------- |
+| 0.18 | 0.18.0               |
 | 0.17 | 0.2.0                |
 | 0.16 | 0.1.0 - 0.1.5        |
 

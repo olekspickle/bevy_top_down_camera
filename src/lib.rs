@@ -2,8 +2,9 @@ use bevy::prelude::*;
 
 mod gamepad;
 mod mouse;
-use gamepad::GamepadPlugin;
-use mouse::MousePlugin;
+
+pub use gamepad::GamepadPlugin;
+pub use mouse::MousePlugin;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CameraSyncSet;
@@ -63,15 +64,21 @@ pub struct TopDownCamera {
     pub gamepad: Option<GamepadInput>,
 }
 
-pub struct GamepadInput {
-    /// Key to zoom in
-    pub zoom_in_key: InputType,
-    /// Key to zoom out
-    pub zoom_out_key: InputType,
-    /// Key to rise the camera vertically
-    pub height_rise_key: InputType,
-    /// Key to lower the camera vertically
-    pub height_lower_key: InputType,
+impl Default for TopDownCamera {
+    fn default() -> Self {
+        TopDownCamera {
+            motion: Motion::default(),
+            cursor_enabled: true,
+            mode: CameraMode::Move,
+            initial_setup: false,
+            zoom: Some((5.0, 50.0).into()),
+            height: Some((5.0, 50.0).into()),
+            height_rise_key: KeyCode::KeyX.into(),
+            height_lower_key: KeyCode::KeyZ.into(),
+            rotate_key: MouseButton::Right.into(),
+            gamepad: Some(GamepadInput::default()),
+        }
+    }
 }
 
 pub struct Motion {
@@ -91,86 +98,28 @@ pub struct Motion {
     pub deadzone: f32,
 }
 
-impl TopDownCamera {
-    pub fn with_follow(mut self, follow: bool) -> Self {
-        self.motion.follow = follow;
-        self
-    }
-
-    pub fn with_move_speed(mut self, speed: f32) -> Self {
-        self.motion.move_speed = speed;
-        self
-    }
-
-    pub fn with_max_speed(mut self, speed: f32) -> Self {
-        self.motion.max_speed = speed;
-        self
-    }
-
-    pub fn with_rotate_speed(mut self, speed: f32) -> Self {
-        self.motion.rotate_speed = speed;
-        self
-    }
-
-    pub fn with_edge_margin(mut self, margin: Vec2) -> Self {
-        self.motion.edge_margin = margin;
-        self
-    }
-
-    pub fn with_zoom_speed(mut self, speed: f32) -> Self {
-        self.zoom.get_or_insert_with(Default::default).speed = speed;
-        self
-    }
-
-    pub fn with_zoom_min(mut self, min: f32) -> Self {
-        self.zoom.get_or_insert_with(Default::default).min = min;
-        self
-    }
-
-    pub fn with_zoom_max(mut self, max: f32) -> Self {
-        self.zoom.get_or_insert_with(Default::default).max = max;
-        self
-    }
-
-    pub fn with_height_min(mut self, min: f32) -> Self {
-        self.height.get_or_insert_with(Default::default).min = min;
-        self
-    }
-
-    pub fn with_height_max(mut self, max: f32) -> Self {
-        self.height.get_or_insert_with(Default::default).max = max;
-        self
-    }
-
-    pub fn with_height_rise_key(mut self, key: KeyCode) -> Self {
-        self.height_rise_key = key.into();
-        self
-    }
-    pub fn with_height_lower_key(mut self, key: KeyCode) -> Self {
-        self.height_lower_key = key.into();
-        self
-    }
-    pub fn with_rotate_key(mut self, key: KeyCode) -> Self {
-        self.rotate_key = key.into();
-        self
+impl Default for Motion {
+    fn default() -> Self {
+        Self {
+            follow: true,
+            move_speed: 0.05,
+            max_speed: 200.0,
+            rotate_speed: 0.01,
+            edge_margin: Vec2::splat(30.0),
+            deadzone: 0.1,
+        }
     }
 }
 
-impl Default for TopDownCamera {
-    fn default() -> Self {
-        TopDownCamera {
-            motion: Motion::default(),
-            cursor_enabled: true,
-            zoom: Some((5.0, 50.0).into()),
-            mode: CameraMode::Move,
-            initial_setup: false,
-            height: Some(Height::new(5.0, 50.0)),
-            height_rise_key: KeyCode::KeyX.into(),
-            height_lower_key: KeyCode::KeyZ.into(),
-            rotate_key: MouseButton::Right.into(),
-            gamepad: Some(GamepadInput::default()),
-        }
-    }
+pub struct GamepadInput {
+    /// Key to zoom in
+    pub zoom_in_key: InputType,
+    /// Key to zoom out
+    pub zoom_out_key: InputType,
+    /// Key to rise the camera vertically
+    pub height_rise_key: InputType,
+    /// Key to lower the camera vertically
+    pub height_lower_key: InputType,
 }
 
 impl Default for GamepadInput {
@@ -180,19 +129,6 @@ impl Default for GamepadInput {
             zoom_out_key: GamepadButton::LeftTrigger2.into(),
             height_rise_key: GamepadButton::DPadUp.into(),
             height_lower_key: GamepadButton::DPadDown.into(),
-        }
-    }
-}
-
-impl Default for Motion {
-    fn default() -> Self {
-        Self {
-            follow: false,
-            move_speed: 0.2,
-            max_speed: 200.0,
-            rotate_speed: 0.01,
-            edge_margin: Vec2::splat(30.0),
-            deadzone: 0.1,
         }
     }
 }
@@ -272,6 +208,12 @@ impl Height {
     }
 }
 
+impl From<(f32, f32)> for Height {
+    fn from((min, max): (f32, f32)) -> Self {
+        Self { min, max }
+    }
+}
+
 /// The desired target for the top down camera to look at
 ///
 /// # Examples
@@ -281,7 +223,7 @@ impl Height {
 /// use bevy_top_down_camera::TopDownCameraTarget;
 /// fn spawn_player(mut commands: Commands) {
 ///     commands.spawn((
-///         PbrBundle::default(),
+///         Player,
 ///         TopDownCameraTarget
 ///     ));
 /// }
@@ -290,32 +232,27 @@ impl Height {
 pub struct TopDownCameraTarget;
 
 fn sync_player_camera(
-    player_q: Query<&Transform, With<TopDownCameraTarget>>,
-    mut cam_q: Query<(&mut TopDownCamera, &mut Transform), Without<TopDownCameraTarget>>,
+    target_q: Query<&Transform, With<TopDownCameraTarget>>,
+    mut cam_q: Query<(&TopDownCamera, &mut Transform), Without<TopDownCameraTarget>>,
 ) {
-    let Ok((mut cam, mut pos)) = cam_q.single_mut() else {
+    let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
 
-    if cam.initial_setup && !cam.motion.follow {
+    if !cam.motion.follow {
         return;
     }
 
-    for player in player_q.iter() {
-        let mut new = player.looking_at(Vec3::new(0.0, 0.0, -10_000.0), Vec3::Y);
+    for target in target_q.iter() {
+        let mut new = target.looking_at(Vec3::new(0.0, 0.0, -10_000.0), Vec3::Y);
         new.rotate_x(-0.65);
-        let offset = if let Some(height) = cam.height.as_ref() {
-            height.max / 3.0
-        } else {
-            0.0
-        };
+        let offset = cam.height.as_ref().map_or(0.0, |height| height.max / 3.0);
 
         pos.rotation = new.rotation;
-        pos.translation = new.translation + Vec3::new(0.0, offset, offset);
-    }
-
-    if !cam.initial_setup {
-        cam.initial_setup = true;
+        pos.translation = pos.translation.lerp(
+            new.translation + Vec3::new(0.0, offset, offset),
+            cam.motion.move_speed,
+        );
     }
 }
 

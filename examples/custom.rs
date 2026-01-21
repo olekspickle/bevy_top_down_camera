@@ -4,7 +4,10 @@ use bevy_top_down_camera::*;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, TopDownCameraPlugin))
-        .add_systems(Startup, (spawn_player, spawn_world, spawn_camera))
+        .add_systems(
+            Startup,
+            (spawn_camera, spawn_ui, spawn_world, spawn_player).chain(),
+        )
         .add_systems(Update, actions)
         .run();
 }
@@ -18,37 +21,35 @@ fn spawn_player(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Capsule3d::new(0.5, 1.0)),
-            material: materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5)),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..default()
-        },
         Player,
         TopDownCameraTarget, // ADD THIS
+        Mesh3d(meshes.add(Capsule3d::new(0.5, 1.0))),
+        MeshMaterial3d(materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5))),
+        Transform::from_xyz(0.0, 0.5, 0.0),
     ));
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
-        Camera3dBundle::default(),
+        IsDefaultUiCamera,
+        Camera::default(),
+        Camera3d::default(),
         // these are default values, but you can change anything you'd want
         TopDownCamera {
             motion: Motion {
-                follow: false,
-                move_speed: 0.2,
+                move_speed: 0.03,
                 max_speed: 200.0,
                 rotate_speed: 0.01,
                 edge_margin: Vec2::splat(30.0),
-                deadzone: 0.1,
+                ..default()
             },
             zoom: Some((5.0, 50.0).into()),
-            height: Some(Height::new(5.0, 50.0)),
+            height: Some((5.0, 50.0).into()),
             height_rise_key: KeyCode::KeyX.into(),
             height_lower_key: KeyCode::KeyZ.into(),
             rotate_key: MouseButton::Right.into(),
             ..default()
-        }, // ADD THIS
+        },
     ));
 }
 
@@ -57,54 +58,51 @@ fn spawn_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Plane3d::default().mesh().size(50.0, 50.0)),
-        material: materials.add(Color::srgb(0.11, 0.27, 0.16)),
-        ..default()
-    });
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0))),
+        MeshMaterial3d(materials.add(Color::srgb(0.11, 0.27, 0.16))),
+    ));
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        PointLight {
             intensity: 1500.0 * 1000.0,
             ..default()
         },
-        transform: Transform::from_xyz(0.0, 5.0, 0.0),
-        ..default()
-    });
+        Transform::from_xyz(0.0, 5.0, 0.0),
+    ));
+}
 
-    commands.spawn(
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
+fn spawn_ui(mut commands: Commands) {
+    commands.spawn((
+        Node {
+            width: Val::Percent(50.0),
+            height: Val::Percent(22.0),
+            align_items: AlignItems::Start,
+            position_type: PositionType::Absolute,
+            left: Val::Px(0.0),
+            top: Val::Px(0.0),
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
             ..default()
-        }
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                "Move mouse to edges to move camera",
-                TextStyle::default(),
-            ));
-            parent.spawn(TextBundle::from_section(
-                "Use mouse wheel to zoom",
-                TextStyle::default(),
-            ));
-            parent.spawn(TextBundle::from_section("X - camera up", TextStyle::default()));
-            parent.spawn(TextBundle::from_section("Z - camera down", TextStyle::default()));
-            parent.spawn(TextBundle::from_section(
-                "F - toggle follow player mode",
-                TextStyle::default(),
-            ));
-            parent.spawn(TextBundle::from_section(
-                "Right mouse - hold to rotate camera horizontally",
-                TextStyle::default(),
-            ));
-        }),
-    );
+        },
+        children![
+            (
+                Node::default(),
+                Text("Move mouse to edges to move camera".to_string()),
+            ),
+            (Node::default(), Text("Use mouse wheel to zoom".to_string())),
+            (Node::default(), Text("X - camera up".to_string())),
+            (Node::default(), Text("Z - camera down".to_string())),
+            (
+                Node::default(),
+                Text("F - toggle follow player mode".to_string())
+            ),
+            (
+                Node::default(),
+                Text("Right mouse - hold to rotate camera horizontally".to_string())
+            ),
+        ],
+    ));
 }
 
 fn actions(

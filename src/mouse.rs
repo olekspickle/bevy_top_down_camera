@@ -25,29 +25,24 @@ pub fn move_on_edges(
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
-
-    if !cam.cursor_enabled {
+    if !cam.cursor_enabled || cam.motion.follow {
         return;
     }
 
     let Ok(window) = window_q.single() else {
         return;
     };
-
     let Some(cursor_pos) = window.cursor_position() else {
         return;
     };
 
-    let mut value = Vec2::ZERO;
-    for ev in mouse_evr.read() {
-        value += ev.delta;
-    }
-
-    let mut movement = Vec3::ZERO;
+    let value = mouse_evr.read().fold(Vec2::ZERO, |acc, ev| acc + ev.delta);
 
     match cam.mode {
         CameraMode::Move => {
+            let mut movement = Vec3::ZERO;
             let mut edge_rel_speed: f32 = 1.0; // Track how close to the edge we are for speed interpolation
+
             // Horizontal
             {
                 let mut dir = *pos.left();
@@ -88,7 +83,7 @@ pub fn move_on_edges(
 
             // Apply movement with adjusted speed
             if movement != Vec3::ZERO {
-                let edge_rel_speed = edge_rel_speed.max(0.1);
+                let edge_rel_speed = edge_rel_speed.max(cam.motion.move_speed);
                 let speed = cam.motion.max_speed / edge_rel_speed;
                 let delta = movement.normalize_or_zero() * speed * time.delta_secs();
                 let target = pos.translation + delta;

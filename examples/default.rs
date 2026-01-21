@@ -3,8 +3,11 @@ use bevy_top_down_camera::*;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TopDownCameraPlugin /* ADD THIS */))
-        .add_systems(Startup, (spawn_player, spawn_world, spawn_camera))
+        .add_plugins((DefaultPlugins, TopDownCameraPlugin))
+        .add_systems(
+            Startup,
+            (spawn_camera, spawn_ui, spawn_world, spawn_player).chain(),
+        )
         .add_systems(Update, actions)
         .run();
 }
@@ -17,28 +20,22 @@ fn spawn_player(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = Mesh::from(Capsule3d::new(0.5, 1.0));
-    let mesh = Mesh3d(meshes.add(mesh.clone()));
-    let color: MeshMaterial3d<StandardMaterial> =
-        MeshMaterial3d(materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5)));
-
-    let player = (
-        mesh,
-        color,
+    commands.spawn((
         Player,
         TopDownCameraTarget, // ADD THIS
+        Mesh3d(meshes.add(Capsule3d::new(0.5, 1.0))),
+        MeshMaterial3d(materials.add(Color::srgba(0.9, 0.9, 0.9, 0.5))),
         Transform::from_xyz(0.0, 0.5, 0.0),
-    );
-
-    commands.spawn(player);
+    ));
 }
 
 fn spawn_camera(mut commands: Commands) {
-    let camera = (
+    commands.spawn((
+        IsDefaultUiCamera,
+        Camera::default(),
         Camera3d::default(),
         TopDownCamera::default(), // ADD THIS
-    );
-    commands.spawn(camera);
+    ));
 }
 
 fn spawn_world(
@@ -46,33 +43,37 @@ fn spawn_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let floor = (
-        Mesh3d(meshes.add(Mesh::from(Plane3d::default().mesh().size(50.0, 50.0)))),
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(50.0, 50.0))),
         MeshMaterial3d(materials.add(Color::srgb(0.11, 0.27, 0.16))),
-    );
+    ));
 
-    let light = (
+    commands.spawn((
         PointLight {
             intensity: 1500.0 * 1000.0,
             ..default()
         },
         Transform::from_xyz(0.0, 5.0, 0.0),
-    );
+    ));
+}
 
-    commands.spawn(floor);
-    commands.spawn(light);
-
+fn spawn_ui(mut commands: Commands) {
     commands.spawn((
         Node {
+            width: Val::Percent(40.0),
+            height: Val::Percent(20.0),
             align_items: AlignItems::Start,
-            justify_content: JustifyContent::Center,
+            position_type: PositionType::Absolute,
+            left: Val::Px(0.0),
+            top: Val::Px(0.0),
             flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Start,
             ..default()
         },
         children![
             (
                 Node::default(),
-                Text("Move mouse to edges to move camera".to_string())
+                Text("Move mouse to edges to move camera".to_string()),
             ),
             (Node::default(), Text("Use mouse wheel to zoom".to_string())),
             (Node::default(), Text("X - camera up".to_string())),
@@ -83,7 +84,7 @@ fn spawn_world(
             ),
             (
                 Node::default(),
-                Text("Right mouse - hold to rotate camera horizontally".to_string()),
+                Text("Right mouse - hold to rotate camera horizontally".to_string())
             ),
         ],
     ));

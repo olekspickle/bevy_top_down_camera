@@ -39,7 +39,7 @@ fn gamepad_input(
     time: Res<Time>,
     mut cam_q: Query<(&mut TopDownCamera, &mut Transform)>,
     gamepad: Query<&Gamepad>,
-    axes: Res<Axis<GamepadAxis>>,
+    axes: If<Res<Axis<GamepadAxis>>>,
     buttons: Res<ButtonInput<GamepadButton>>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
@@ -144,4 +144,3 @@ fn is_gamepad_button_pressed(buttons: &Res<ButtonInput<GamepadButton>>, input: I
         false
     }
 }
-

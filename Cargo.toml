@@ -1,6 +1,6 @@
 [package]
 name = "bevy_top_down_camera"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "A top down camera written for Bevy"
 keywords = ["bevy", "camera", "topdown", "ARPG", "gamedev"]
@@ -12,14 +12,16 @@ readme = "README.md"
 exclude = ["assets/*"]
 
 [dependencies]
-bevy = { version = "^0.17", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+bevy = { version = "0.18", default-features = false, features = [ "bevy_winit", "bevy_render", "wayland" ] }
 # Compile low-severity logs out of builds for performance.
 # Remove these features if you want to profile your game with tracy.
 # (see <https://github.com/bevyengine/bevy/blob/main/docs/profiling.md#tracy-profiler>)
 tracing = { version = "^0.1", features = ["max_level_debug", "release_max_level_warn"] }
 
-[dev-dependencies]
-bevy = { version = "^0.17", default-features = false, features = ["bevy_winit", "bevy_render", "wayland"] }
+[dev-dependencies.bevy]
+version = "0.18"
+default-features = false
+features = [ "3d_bevy_render", "ui_bevy_render", "wayland", "debug", "default_font"  ]
 
 # LINT
 [lints.clippy]
