@@ -228,7 +228,7 @@ impl From<(f32, f32)> for Height {
 ///     ));
 /// }
 /// ```
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TopDownCameraTarget;
 
 fn sync_player_camera(

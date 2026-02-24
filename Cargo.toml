@@ -1,7 +1,7 @@
 [package]
 name = "bevy_top_down_camera"
-version = "0.3.0"
-edition = "2024"
+version = "0.3.1"
+authors = ["Oleks Pickle <22867443+olekspickle@users.noreply.github.com>"]
 description = "A top down camera written for Bevy"
 keywords = ["bevy", "camera", "topdown", "ARPG", "gamedev"]
 categories = ["game-development"]
@@ -9,6 +9,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/olekspickle/bevy_top_down_camera"
 homepage = "https://github.com/olekspickle/bevy_top_down_camera"
 readme = "README.md"
+edition = "2024"
 exclude = ["assets/*"]
 
 [dependencies]
