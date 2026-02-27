@@ -8,10 +8,8 @@ pub struct MousePlugin;
 
 impl Plugin for MousePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, move_on_edges).add_systems(
-            Update,
-            (mode_switch, change_height, zoom.run_if(zoom_condition)),
-        );
+        app.add_systems(PreUpdate, move_on_edges)
+            .add_systems(Update, (mode_switch, zoom.run_if(zoom_condition)));
     }
 }
 
@@ -99,6 +97,7 @@ pub fn move_on_edges(
 
 fn zoom(
     mut scroll_evr: MessageReader<MouseWheel>,
+    // mut scroll_gamepad_evr: MessageReader<GamepadAxis>,
     mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
@@ -124,65 +123,28 @@ fn zoom(
     }
 }
 
-fn change_height(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
-) {
-    let Ok((cam, mut pos)) = cam_q.single_mut() else {
-        return;
-    };
-    if let Some(height) = cam.height.as_ref() {
-        let mut delta = 0.0;
-
-        if keys.pressed(cam.height_rise_key.key()) {
-            delta += 1.0;
-        }
-        if keys.pressed(cam.height_lower_key.key()) {
-            delta -= 1.0;
-        }
-
-        let target = pos.translation.y + delta;
-        if target < height.min || target > height.max {
-            return;
-        }
-        let speed = if let Some(zoom) = cam.zoom.as_ref() {
-            zoom.speed
-        } else {
-            0.1
-        };
-        pos.translation.y = pos.translation.y.lerp(target, speed);
-    }
-}
-
 fn mode_switch(
-    mut cam_q: Query<&mut TopDownCamera>,
-    mouse: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    gamepad: Res<ButtonInput<GamepadButton>>,
+    mut cam_q: Query<&mut TopDownCamera>,
 ) {
     let Ok(mut cam) = cam_q.single_mut() else {
         return;
     };
 
-    match cam.rotate_key {
-        InputType::Key(key) => {
-            if keys.pressed(key) {
-                cam.mode = CameraMode::Rotate;
-            } else {
-                cam.mode = CameraMode::Move;
-            }
-        }
-        InputType::Mouse(btn) => {
-            if mouse.pressed(btn) {
-                cam.mode = CameraMode::Rotate;
-            } else {
-                cam.mode = CameraMode::Move;
-            }
-        }
-        _ => {}
+    let rotate_pressed = cam.rotate_key.is_key_pressed(&keys)
+        || cam.rotate_key.is_gamepad_pressed(&gamepad)
+        || cam.rotate_key.is_mouse_pressed(&mouse);
+
+    if rotate_pressed {
+        cam.mode = CameraMode::Rotate;
+    } else {
+        cam.mode = CameraMode::Move;
     }
 }
 
-pub fn zoom_condition(cam_q: Query<&TopDownCamera>) -> bool {
+fn zoom_condition(cam_q: Query<&TopDownCamera>) -> bool {
     let Ok(cam) = cam_q.single() else {
         return false;
     };

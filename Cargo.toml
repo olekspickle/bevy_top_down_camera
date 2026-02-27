@@ -14,6 +14,7 @@ exclude = ["assets/*"]
 
 [dependencies]
 bevy = { version = "0.18", default-features = false, features = [ "bevy_winit", "bevy_render", "wayland" ] }
+bevy_unified_input = "0.1.0"
 # Compile low-severity logs out of builds for performance.
 # Remove these features if you want to profile your game with tracy.
 # (see <https://github.com/bevyengine/bevy/blob/main/docs/profiling.md#tracy-profiler>)

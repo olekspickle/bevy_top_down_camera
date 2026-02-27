@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_unified_input::InputKind;
 
 mod gamepad;
 mod mouse;
@@ -24,7 +25,7 @@ impl Plugin for TopDownCameraPlugin {
 
         app.add_systems(
             PostUpdate,
-            sync_player_camera
+            (sync_player_camera, change_height.run_if(sync_condition))
                 .before(TransformSystems::Propagate)
                 .in_set(CameraSyncSet),
         );
@@ -51,11 +52,11 @@ pub struct TopDownCamera {
     /// Height range of the camera
     pub height: Option<Height>,
     /// Key to lower the camera vertically
-    pub height_lower_key: InputType,
+    pub height_lower_key: InputKind,
     /// Key to rise the camera vertically
-    pub height_rise_key: InputType,
+    pub height_rise_key: InputKind,
     /// Key to rotate the camera horizontally
-    pub rotate_key: InputType,
+    pub rotate_key: InputKind,
 
     #[doc(hidden)]
     pub mode: CameraMode,
@@ -113,13 +114,13 @@ impl Default for Motion {
 
 pub struct GamepadInput {
     /// Key to zoom in
-    pub zoom_in_key: InputType,
+    pub zoom_in_key: InputKind,
     /// Key to zoom out
-    pub zoom_out_key: InputType,
+    pub zoom_out_key: InputKind,
     /// Key to rise the camera vertically
-    pub height_rise_key: InputType,
+    pub height_rise_key: InputKind,
     /// Key to lower the camera vertically
-    pub height_lower_key: InputType,
+    pub height_lower_key: InputKind,
 }
 
 impl Default for GamepadInput {
@@ -130,37 +131,6 @@ impl Default for GamepadInput {
             height_rise_key: GamepadButton::DPadUp.into(),
             height_lower_key: GamepadButton::DPadDown.into(),
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InputType {
-    Key(KeyCode),
-    Mouse(MouseButton),
-    Gamepad(GamepadButton),
-}
-impl InputType {
-    fn key(&self) -> KeyCode {
-        match self {
-            InputType::Key(key) => *key,
-            _ => unreachable!("not key"),
-        }
-    }
-}
-impl From<KeyCode> for InputType {
-    fn from(value: KeyCode) -> Self {
-        InputType::Key(value)
-    }
-}
-impl From<MouseButton> for InputType {
-    fn from(value: MouseButton) -> Self {
-        InputType::Mouse(value)
-    }
-}
-
-impl From<GamepadButton> for InputType {
-    fn from(value: GamepadButton) -> Self {
-        InputType::Gamepad(value)
     }
 }
 
@@ -214,6 +184,14 @@ impl From<(f32, f32)> for Height {
     }
 }
 
+#[doc(hidden)]
+#[derive(Component, Default, Clone, PartialEq)]
+pub enum CameraMode {
+    #[default]
+    Move,
+    Rotate,
+}
+
 /// The desired target for the top down camera to look at
 ///
 /// # Examples
@@ -239,10 +217,6 @@ fn sync_player_camera(
         return;
     };
 
-    if !cam.motion.follow {
-        return;
-    }
-
     for target in target_q.iter() {
         let mut new = target.looking_at(Vec3::new(0.0, 0.0, -10_000.0), Vec3::Y);
         new.rotate_x(-0.65);
@@ -256,10 +230,46 @@ fn sync_player_camera(
     }
 }
 
-#[doc(hidden)]
-#[derive(Component, Default, Clone, PartialEq)]
-pub enum CameraMode {
-    #[default]
-    Move,
-    Rotate,
+pub fn sync_condition(cam_q: Query<&TopDownCamera>) -> bool {
+    let Ok(cam) = cam_q.single() else {
+        return false;
+    };
+    cam.motion.follow
+}
+
+fn change_height(
+    keys: Res<ButtonInput<KeyCode>>,
+    gamepad: Res<ButtonInput<GamepadButton>>,
+    mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
+) {
+    let Ok((cam, mut pos)) = cam_q.single_mut() else {
+        return;
+    };
+    if let Some(height) = cam.height.as_ref() {
+        let mut delta = 0.0;
+        let rise_key = cam.height_rise_key;
+        let lower_key = cam.height_rise_key;
+        let (rise, lower) = (
+            rise_key.is_key_pressed(&keys) || rise_key.is_gamepad_pressed(&gamepad),
+            lower_key.is_key_pressed(&keys) || lower_key.is_gamepad_pressed(&gamepad),
+        );
+
+        if rise {
+            delta += 1.0;
+        }
+        if lower {
+            delta -= 1.0;
+        }
+
+        let target = pos.translation.y + delta;
+        if target < height.min || target > height.max {
+            return;
+        }
+        let speed = if let Some(zoom) = cam.zoom.as_ref() {
+            zoom.speed
+        } else {
+            0.1
+        };
+        pos.translation.y = pos.translation.y.lerp(target, speed);
+    }
 }

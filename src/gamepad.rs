@@ -1,4 +1,4 @@
-use crate::{InputType, TopDownCamera};
+use crate::TopDownCamera;
 use bevy::{
     input::gamepad::{GamepadConnection, GamepadConnectionEvent},
     prelude::*,
@@ -37,16 +37,16 @@ fn gamepad_connection_events(mut events: MessageReader<GamepadConnectionEvent>) 
 
 fn gamepad_input(
     time: Res<Time>,
-    mut cam_q: Query<(&mut TopDownCamera, &mut Transform)>,
-    gamepad: Query<&Gamepad>,
     axes: If<Res<Axis<GamepadAxis>>>,
-    buttons: Res<ButtonInput<GamepadButton>>,
+    gamepads: Query<&Gamepad>,
+    gamepad_btn: Res<ButtonInput<GamepadButton>>,
+    mut cam_q: Query<(&mut TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
 
-    for _gamepad in gamepad.iter() {
+    for _ in gamepads.iter() {
         if let Some(gamepad_input) = &cam.gamepad {
             // Movement and rotation
             let left_stick_x = axes.get(GamepadAxis::LeftStickX).unwrap_or_default();
@@ -91,10 +91,10 @@ fn gamepad_input(
                 let lower_key = gamepad_input.height_lower_key;
 
                 let mut delta = 0.0;
-                if is_gamepad_button_pressed(&buttons, rise_key) {
+                if rise_key.is_gamepad_pressed(&gamepad_btn) {
                     delta += 1.0;
                 }
-                if is_gamepad_button_pressed(&buttons, lower_key) {
+                if lower_key.is_gamepad_pressed(&gamepad_btn) {
                     delta -= 1.0;
                 }
 
@@ -114,13 +114,12 @@ fn gamepad_input(
                 let zoom_out_key = gamepad_input.zoom_out_key;
 
                 let mut scroll = 0.0;
-                if is_gamepad_button_pressed(&buttons, zoom_in_key) {
+                if zoom_in_key.is_gamepad_pressed(&gamepad_btn) {
                     scroll += 1.0;
                 }
-                if is_gamepad_button_pressed(&buttons, zoom_out_key) {
+                if zoom_out_key.is_gamepad_pressed(&gamepad_btn) {
                     scroll -= 1.0;
                 }
-
                 if scroll != 0.0 {
                     let direction = pos.forward().normalize();
                     let delta = direction * scroll;
@@ -134,13 +133,5 @@ fn gamepad_input(
                 }
             }
         }
-    }
-}
-
-fn is_gamepad_button_pressed(buttons: &Res<ButtonInput<GamepadButton>>, input: InputType) -> bool {
-    if let InputType::Gamepad(button_type) = input {
-        buttons.pressed(button_type)
-    } else {
-        false
     }
 }
