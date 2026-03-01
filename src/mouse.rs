@@ -8,8 +8,8 @@ pub struct MousePlugin;
 
 impl Plugin for MousePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, move_on_edges)
-            .add_systems(Update, (mode_switch, zoom.run_if(zoom_condition)));
+        app.add_systems(PreUpdate, (move_on_edges, mode_switch))
+            .add_systems(Update, zoom.run_if(zoom_condition));
     }
 }
 
@@ -97,7 +97,6 @@ pub fn move_on_edges(
 
 fn zoom(
     mut scroll_evr: MessageReader<MouseWheel>,
-    // mut scroll_gamepad_evr: MessageReader<GamepadAxis>,
     mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
@@ -123,30 +122,26 @@ fn zoom(
     }
 }
 
+fn zoom_condition(cam: Single<&TopDownCamera>) -> bool {
+    cam.zoom.is_some()
+}
+
 fn mode_switch(
-    keys: Res<ButtonInput<KeyCode>>,
-    mouse: Res<ButtonInput<MouseButton>>,
-    gamepad: Res<ButtonInput<GamepadButton>>,
+    keys: Option<Res<ButtonInput<KeyCode>>>,
+    mouse: Option<Res<ButtonInput<MouseButton>>>,
     mut cam_q: Query<&mut TopDownCamera>,
 ) {
     let Ok(mut cam) = cam_q.single_mut() else {
         return;
     };
 
-    let rotate_pressed = cam.rotate_key.is_key_pressed(&keys)
-        || cam.rotate_key.is_gamepad_pressed(&gamepad)
-        || cam.rotate_key.is_mouse_pressed(&mouse);
+    let rotate_pressed = cam
+        .rotate_key
+        .just_pressed_any(keys.as_ref(), mouse.as_ref(), None);
 
     if rotate_pressed {
         cam.mode = CameraMode::Rotate;
     } else {
         cam.mode = CameraMode::Move;
     }
-}
-
-fn zoom_condition(cam_q: Query<&TopDownCamera>) -> bool {
-    let Ok(cam) = cam_q.single() else {
-        return false;
-    };
-    cam.zoom.is_some()
 }

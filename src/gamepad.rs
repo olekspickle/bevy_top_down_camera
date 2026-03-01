@@ -38,6 +38,8 @@ fn gamepad_connection_events(mut events: MessageReader<GamepadConnectionEvent>) 
 fn gamepad_input(
     time: Res<Time>,
     axes: If<Res<Axis<GamepadAxis>>>,
+    // TODO: zoom in\out on gamepad touchpad?..
+    // mut scroll_gamepad_evr: MessageReader<GamepadAxis>,
     gamepads: Query<&Gamepad>,
     gamepad_btn: Res<ButtonInput<GamepadButton>>,
     mut cam_q: Query<(&mut TopDownCamera, &mut Transform)>,
@@ -62,62 +64,33 @@ fn gamepad_input(
                 let dir = dir.normalize_or_zero();
                 movement += dir * -left_stick_x;
             }
-
             if left_stick_y.abs() > cam.motion.deadzone {
                 let mut dir = *pos.forward();
                 dir.y = 0.0;
                 let dir = dir.normalize_or_zero();
                 movement += dir * left_stick_y;
             }
-
-            if right_stick_x.abs() > cam.motion.deadzone {
-                rotation = -right_stick_x * cam.motion.rotate_speed;
-            }
-
             if movement != Vec3::ZERO {
                 let delta = movement * cam.motion.max_speed * time.delta_secs();
                 let target = pos.translation + delta;
                 pos.translation = pos.translation.lerp(target, cam.motion.move_speed);
             }
 
+            if right_stick_x.abs() > cam.motion.deadzone {
+                rotation = -right_stick_x * cam.motion.rotate_speed;
+            }
             if rotation != 0.0 {
                 let yaw_rot = Quat::from_rotation_y(rotation);
                 pos.rotate(yaw_rot);
             }
 
-            // Zoom and height
-            if let Some(height) = &cam.height {
-                let rise_key = gamepad_input.height_rise_key;
-                let lower_key = gamepad_input.height_lower_key;
-
-                let mut delta = 0.0;
-                if rise_key.is_gamepad_pressed(&gamepad_btn) {
-                    delta += 1.0;
-                }
-                if lower_key.is_gamepad_pressed(&gamepad_btn) {
-                    delta -= 1.0;
-                }
-
-                let target = pos.translation.y + delta;
-                if target >= height.min && target <= height.max {
-                    let speed = if let Some(zoom) = cam.zoom.as_ref() {
-                        zoom.speed
-                    } else {
-                        0.1
-                    };
-                    pos.translation.y = pos.translation.y.lerp(target, speed);
-                }
-            }
-
+            // Zoom
             if let Some(zoom) = &cam.zoom {
-                let zoom_in_key = gamepad_input.zoom_in_key;
-                let zoom_out_key = gamepad_input.zoom_out_key;
-
                 let mut scroll = 0.0;
-                if zoom_in_key.is_gamepad_pressed(&gamepad_btn) {
+                if gamepad_input.zoom_in_key.pressed_gamepad(&gamepad_btn) {
                     scroll += 1.0;
                 }
-                if zoom_out_key.is_gamepad_pressed(&gamepad_btn) {
+                if gamepad_input.zoom_out_key.pressed_gamepad(&gamepad_btn) {
                     scroll -= 1.0;
                 }
                 if scroll != 0.0 {

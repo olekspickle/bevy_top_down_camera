@@ -92,29 +92,26 @@ fn spawn_ui(mut commands: Commands) {
 
 fn actions(
     time: Res<Time>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut cam_q: Query<&mut TopDownCamera>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut cam: Single<&mut TopDownCamera>,
     mut player_q: Query<&mut Transform, With<Player>>,
 ) {
     let mut direction = Vec3::ZERO;
 
-    if keyboard_input.pressed(KeyCode::KeyW) {
+    if keys.pressed(KeyCode::KeyW) {
         direction.z -= 1.0;
     }
-    if keyboard_input.pressed(KeyCode::KeyS) {
+    if keys.pressed(KeyCode::KeyS) {
         direction.z += 1.0;
     }
-    if keyboard_input.pressed(KeyCode::KeyA) {
+    if keys.pressed(KeyCode::KeyA) {
         direction.x -= 1.0;
     }
-    if keyboard_input.pressed(KeyCode::KeyD) {
+    if keys.pressed(KeyCode::KeyD) {
         direction.x += 1.0;
     }
 
-    if keyboard_input.just_pressed(KeyCode::KeyF) {
-        let Ok(mut cam) = cam_q.single_mut() else {
-            return;
-        };
+    if keys.just_pressed(KeyCode::KeyF) {
         cam.motion.follow = !cam.motion.follow;
     }
 

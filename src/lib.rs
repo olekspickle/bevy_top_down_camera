@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_unified_input::InputKind;
+use bevy_unified_input::*;
 
 mod gamepad;
 mod mouse;
@@ -50,19 +50,20 @@ pub struct TopDownCamera {
     pub cursor_enabled: bool,
     pub zoom: Option<Zoom>,
     /// Height range of the camera
+    /// If `None` the camera will not move vertically
     pub height: Option<Height>,
     /// Key to lower the camera vertically
-    pub height_lower_key: InputKind,
+    pub height_lower_key: InputBinding,
     /// Key to rise the camera vertically
-    pub height_rise_key: InputKind,
-    /// Key to rotate the camera horizontally
-    pub rotate_key: InputKind,
-
+    pub height_rise_key: InputBinding,
+    /// Key to rotate the camera horizontally for mouse and keyboard input
+    pub rotate_key: InputBinding,
+    /// Gamepad specific settings
+    pub gamepad: Option<GamepadInput>,
     #[doc(hidden)]
     pub mode: CameraMode,
     #[doc(hidden)]
     pub initial_setup: bool,
-    pub gamepad: Option<GamepadInput>,
 }
 
 impl Default for TopDownCamera {
@@ -74,8 +75,8 @@ impl Default for TopDownCamera {
             initial_setup: false,
             zoom: Some((5.0, 50.0).into()),
             height: Some((5.0, 50.0).into()),
-            height_rise_key: KeyCode::KeyX.into(),
-            height_lower_key: KeyCode::KeyZ.into(),
+            height_rise_key: [KeyCode::KeyX.into(), GamepadButton::DPadUp.into()].into(),
+            height_lower_key: [KeyCode::KeyZ.into(), GamepadButton::DPadDown.into()].into(),
             rotate_key: MouseButton::Right.into(),
             gamepad: Some(GamepadInput::default()),
         }
@@ -114,13 +115,9 @@ impl Default for Motion {
 
 pub struct GamepadInput {
     /// Key to zoom in
-    pub zoom_in_key: InputKind,
+    pub zoom_in_key: InputBinding,
     /// Key to zoom out
-    pub zoom_out_key: InputKind,
-    /// Key to rise the camera vertically
-    pub height_rise_key: InputKind,
-    /// Key to lower the camera vertically
-    pub height_lower_key: InputKind,
+    pub zoom_out_key: InputBinding,
 }
 
 impl Default for GamepadInput {
@@ -128,8 +125,6 @@ impl Default for GamepadInput {
         Self {
             zoom_in_key: GamepadButton::RightTrigger2.into(),
             zoom_out_key: GamepadButton::LeftTrigger2.into(),
-            height_rise_key: GamepadButton::DPadUp.into(),
-            height_lower_key: GamepadButton::DPadDown.into(),
         }
     }
 }
@@ -217,6 +212,10 @@ fn sync_player_camera(
         return;
     };
 
+    if !cam.motion.follow {
+        return;
+    }
+
     for target in target_q.iter() {
         let mut new = target.looking_at(Vec3::new(0.0, 0.0, -10_000.0), Vec3::Y);
         new.rotate_x(-0.65);
@@ -230,30 +229,23 @@ fn sync_player_camera(
     }
 }
 
-pub fn sync_condition(cam_q: Query<&TopDownCamera>) -> bool {
-    let Ok(cam) = cam_q.single() else {
-        return false;
-    };
-    cam.motion.follow
-}
-
 fn change_height(
-    keys: Res<ButtonInput<KeyCode>>,
-    gamepad: Res<ButtonInput<GamepadButton>>,
+    keys: Option<Res<ButtonInput<KeyCode>>>,
+    gamepad: Option<Res<ButtonInput<GamepadButton>>>,
     mut cam_q: Query<(&TopDownCamera, &mut Transform)>,
 ) {
     let Ok((cam, mut pos)) = cam_q.single_mut() else {
         return;
     };
     if let Some(height) = cam.height.as_ref() {
-        let mut delta = 0.0;
-        let rise_key = cam.height_rise_key;
-        let lower_key = cam.height_rise_key;
         let (rise, lower) = (
-            rise_key.is_key_pressed(&keys) || rise_key.is_gamepad_pressed(&gamepad),
-            lower_key.is_key_pressed(&keys) || lower_key.is_gamepad_pressed(&gamepad),
+            cam.height_rise_key
+                .pressed_any(keys.as_ref(), None, gamepad.as_ref()),
+            cam.height_lower_key
+                .pressed_any(keys.as_ref(), None, gamepad.as_ref()),
         );
 
+        let mut delta = 0.0;
         if rise {
             delta += 1.0;
         }
@@ -272,4 +264,8 @@ fn change_height(
         };
         pos.translation.y = pos.translation.y.lerp(target, speed);
     }
+}
+
+pub fn sync_condition(cam: Single<&TopDownCamera>) -> bool {
+    cam.motion.follow
 }
