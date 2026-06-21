@@ -13,7 +13,7 @@
 Add the **bevy_top_down_camera** crate:
 
 ```
-cargo add bevy_third_person_camera
+cargo add bevy_top_down_camera
 ```
 
 Import the **bevy_top_down_camera** crate:
@@ -99,6 +99,7 @@ When using third party physics engines such as bevy rapier 3d or avian 3d, you s
 
 | bevy | bevy_top_down_camera |
 | ---- | -------------------- |
+| 0.19 | 0.4.0                |
 | 0.18 | 0.3.*                |
 | 0.17 | 0.2.0                |
 | 0.16 | 0.1.0 - 0.1.5        |

@@ -40,7 +40,8 @@ impl Plugin for TopDownCameraPlugin {
 /// fn spawn_camera(mut commands: Commands) {
 ///     commands.spawn((
 ///         TopDownCamera::default(),
-///         Camera3dBundle::default()
+///         Camera::default(),
+///         Camera3d::default(),
 ///     ));
 /// }
 /// ```
