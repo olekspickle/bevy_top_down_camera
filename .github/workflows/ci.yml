@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install wayland
-        run: sudo apt-get update; sudo apt-get install libwayland-dev
+        run: sudo apt-get update; sudo apt-get install libwayland-dev libudev-dev
         if: runner.os == 'linux'
       - run: cargo build
 
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install wayland
-        run: sudo apt-get update; sudo apt-get install libwayland-dev
+        run: sudo apt-get update; sudo apt-get install libwayland-dev libudev-dev
         if: runner.os == 'linux'
       - run: cargo build --examples
 
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install wayland
-        run: sudo apt-get update; sudo apt-get install libwayland-dev
+        run: sudo apt-get update; sudo apt-get install libwayland-dev libudev-dev
         if: runner.os == 'linux'
       - run: rustup component add clippy
       - run: cargo clippy -- -D warnings
